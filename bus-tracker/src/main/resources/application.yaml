@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: bus-tracker
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+tmb:
+  cat:
+    app_id: ${TMB_CAT_APP_ID}
+    app_key: ${TMB_CAT_APP_KEY}
+    base_url: "https://api.tmb.cat/v1"
+
+scheduler:
+  error:
+    retry-time-duration: 2s
+
+bus:
+  notify-before-seconds: 300
+  kafka:
+    topic-name: "busProximity"
