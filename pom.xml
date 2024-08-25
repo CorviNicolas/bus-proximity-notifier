@@ -23,6 +23,7 @@
     </developers>
     <modules>
         <module>bus-tracker</module>
+        <module>bus-logger-notifier</module>
     </modules>
     <scm>
         <connection/>
@@ -32,6 +33,7 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <springboot.version>3.3.3</springboot.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -42,6 +44,8 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
+                <version>${springboot.version}</version>
+
             </dependency>
             <dependency>
                 <groupId>org.springframework.kafka</groupId>
@@ -75,7 +79,8 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-test</artifactId>
-                <version>3.3.3</version>
+                <version>${springboot.version}</version>
+
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -94,6 +99,18 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <!-- Basic information to get Liquibase plugin:
+                    include <groupId>, <artifactID>, and <version> elements -->
+                    <groupId>org.liquibase</groupId>
+                    <artifactId>liquibase-maven-plugin</artifactId>
+                    <version>4.29.1</version>
+                    <configuration>
+                        <!-- Set values for Liquibase properties and settings
+                        for example, the location of a properties file to use -->
+                        <propertyFile>project.properties</propertyFile>
+                    </configuration>
+                </plugin>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
