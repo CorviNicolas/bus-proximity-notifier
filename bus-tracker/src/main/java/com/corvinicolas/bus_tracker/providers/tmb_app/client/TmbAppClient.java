@@ -8,8 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SynchronousSink;
 
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +21,7 @@ public class TmbAppClient {
     private final BusProximityMapper mapper;
 
     public Mono<BusProximityModel> getStopPrevision() {
-        String line = "V13";
+        String line = "V1";
         return webClient
                 .get()
                 .uri(uriBuilder -> {
@@ -29,6 +31,13 @@ public class TmbAppClient {
                     return uriBuilder.build(Map.of("line", line, "stopCode", "1775"));
                 })
                 .exchangeToMono(clientResponse -> clientResponse.bodyToMono(IBusStopPrevisionResponse.class))
+                .handle(new BiConsumer<IBusStopPrevisionResponse, SynchronousSink<IBusStopPrevisionResponse>>() {
+                    @Override
+                    public void accept(IBusStopPrevisionResponse iBusStopPrevisionResponse, SynchronousSink<IBusStopPrevisionResponse> synchronousSink) {
+
+                        synchronousSink.next(iBusStopPrevisionResponse);
+                    }
+                })
                 .map(iBusStopPrevisionResponse -> mapper.iBusToServiceModel(iBusStopPrevisionResponse, line));
     }
 

@@ -12,6 +12,11 @@ tmb:
     app_id: ${TMB_CAT_APP_ID}
     app_key: ${TMB_CAT_APP_KEY}
     base_url: "https://api.tmb.cat/v1"
+    request-parameters:
+      stop-code:
+      line:
+
+
 
 scheduler:
   error:

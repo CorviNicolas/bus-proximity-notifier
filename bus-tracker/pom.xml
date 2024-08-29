@@ -44,6 +44,11 @@
                 <artifactId>spring-kafka</artifactId>
             </dependency>
             <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.3.0-jre</version>
+            </dependency>
+            <dependency>
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct</artifactId>
             </dependency>
@@ -63,6 +68,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.corvinicolas.bus_tracker.BusTrackerApplication</mainClass>
+                    <layout>JAR</layout>
+                </configuration>
             </plugin>
         </plugins>
 

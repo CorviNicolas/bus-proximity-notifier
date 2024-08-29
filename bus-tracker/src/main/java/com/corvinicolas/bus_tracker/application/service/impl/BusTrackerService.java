@@ -1,18 +1,17 @@
 package com.corvinicolas.bus_tracker.application.service.impl;
 
+import com.corvinicolas.bus_tracker.application.service.model.BusProximityModel;
 import com.corvinicolas.bus_tracker.providers.tmb_app.client.TmbAppClient;
-import lombok.RequiredArgsConstructor;
+import com.google.common.primitives.Longs;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.concurrent.SimpleAsyncTaskScheduler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -36,7 +35,7 @@ public class BusTrackerService implements InitializingBean {
     private final List<ScheduledFuture<?>> scheduledFutures = new ArrayList<>();
     private final Executor executor = Executors.newSingleThreadExecutor();
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private String busTopic;
+    private final String busTopic;
 
 
     public BusTrackerService(
@@ -60,29 +59,22 @@ public class BusTrackerService implements InitializingBean {
         this.busTopic = busTopic;
     }
 
-    public void configureTasks() {
-        if(!scheduledFutures.isEmpty()){
-            scheduledFutures.forEach(scheduledFuture -> {
-                LOGGER.warn("Task: {} will be cancelled if not running", scheduledFuture);
-                scheduledFuture.cancel(false);
-            });
-        }
-        scheduledFutures.clear();
-        LOGGER.info("test");
-        try{
+    public void checkBusProximity() {
+        clearScheduledTasks();
 
+        try{
             tmbAppClient.getStopPrevision().subscribe(busProximityModel -> {
                 LOGGER.info("Next arrive will be in {} seconds", busProximityModel.getTimeInSeconds());
                 int timeInSeconds = busProximityModel.getTimeInSeconds();
                 if(timeInSeconds <= this.notifyBeforeSeconds) {
                     LOGGER.info("Sending an event since next bus will come in the next {} seconds", timeInSeconds);
-                    kafkaTemplate.send(busTopic, busProximityModel.getLine(), busProximityModel);
+                    produceEvent(busProximityModel);
                     // trigger event notification and schedule new trigger
                     Instant nextTrigger = Instant.now().plusSeconds(timeInSeconds + 10);
                     scheduleNextProximityCheckAt(nextTrigger);
                 } else {
                     Instant nextTrigger = Instant.now().plusSeconds(timeInSeconds - notifyBeforeSeconds + 5);
-                    LOGGER.info("Dont emit an event, re-schedule next proximity check at {}", nextTrigger);
+                    LOGGER.info("Dont emit an event, re-schedule next proximity check");
                     scheduleNextProximityCheckAt(nextTrigger);
                 }
             });
@@ -94,14 +86,30 @@ public class BusTrackerService implements InitializingBean {
 
     }
 
+    private void clearScheduledTasks() {
+        if(!scheduledFutures.isEmpty()){
+            scheduledFutures.forEach(scheduledFuture -> {
+                LOGGER.warn("Task: {} will be cancelled if not running", scheduledFuture);
+                scheduledFuture.cancel(false);
+            });
+        }
+        scheduledFutures.clear();
+    }
+
+    private void produceEvent(BusProximityModel busProximityModel) {
+        List<Header> headers = List.of(new RecordHeader("produced_timestamp", Longs.toByteArray(Instant.now().toEpochMilli())));
+        ProducerRecord<String, Object> producerRecord = new ProducerRecord<>(busTopic, 0, busProximityModel.getLine(), busProximityModel, headers);
+        kafkaTemplate.send(producerRecord);
+    }
+
     @Override
     public void afterPropertiesSet() {
-        executor.execute(this::configureTasks);
+        executor.execute(this::checkBusProximity);
     }
 
     private void scheduleNextProximityCheckAt(Instant nextTrigger){
         LOGGER.info("Scheduling next proximity check at: {}", nextTrigger);
-        ScheduledFuture<?> task = scheduler.schedule(() -> executor.execute(this::configureTasks), nextTrigger);
+        ScheduledFuture<?> task = scheduler.schedule(() -> executor.execute(this::checkBusProximity), nextTrigger);
         scheduledFutures.add(task);
     }
 

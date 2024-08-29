@@ -1,6 +1,7 @@
 package com.corvinicolas.bus_tracker.config;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -16,8 +17,17 @@ public class TmbCatProviderConfig {
     private String appId;
     private String appKey;
     private String baseUrl;
+    private RequestParameters requestParameters;
     public static final String APP_ID_PARAM = "app_id";
     public static final String APP_KEY_PARAM = "app_key";
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class RequestParameters{
+        private String stopCode;
+        private String line;
+    }
 
     @Bean
     public WebClient tmbCatWebClient() {

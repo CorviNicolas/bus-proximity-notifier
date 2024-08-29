@@ -2,12 +2,14 @@ package com.corvinicolas.bus_tracker.config;
 
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.config.TopicConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.adapter.RecordFilterStrategy;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,4 +39,6 @@ public class KafkaConfig {
     public NewTopic topic1() {
         return new NewTopic(busTopicName, 1, (short) 1);
     }
+
+
 }
